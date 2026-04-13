@@ -78,6 +78,9 @@ Sensitive information like API keys and credentials are not included in this rep
 
 **Aditya Rajput**
 
+## 📄 License
+This project is licensed under the MIT License.
+
 ---
 
 ## ⭐ If you like this project

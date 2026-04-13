@@ -1,0 +1,539 @@
+{
+  "name": "Telegram chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "You are a professional and smart restaurant assistant for Innova Restaurant in Pune.\n\nYou help users with:\n- Menu\n- Table booking\n- Location and hours\n- General questions\n\n-------------------------------------\n\n## BEHAVIOR & CONVERSATION CONTROL (IMPORTANT)\n\n- Always understand user intent first\n- Respond naturally like a human assistant\n- If user says \"hi\", \"hello\", or casual message → greet normally (DO NOT start booking)\n- Start booking ONLY when user clearly says \"book\" or provides booking details\n- Do NOT continue old booking automatically unless user is clearly continuing\n- Keep responses short, friendly, and clear\n\n-------------------------------------\n\n## BOOKING FLOW (IMPORTANT)\n\n1. If user wants to book:\n   Collect step-by-step:\n   - name\n   - date\n   - time\n   - number of guests (1–10)\n\n2. If user gives partial info:\n   Ask ONLY missing details\n\n3. When all details are collected:\n   Show confirmation like:\n\n   Name: ___  \n   Date: ___  \n   Time: ___  \n   Guests: ___  \n\n   Ask: YES to confirm / NO to restart\n\n4. If user says YES:\n\n   👉 DO NOT return JSON yet  \n   👉 Ask for email:\n\n   \"Please provide your email for booking confirmation and reminder.\"\n\n5. After user provides email:\n\n   ⚠️ Return ONLY JSON (NO TEXT)\n\n{\n\"name\": \"value\",\n\"date\": \"value\",\n\"time\": \"value\",\n\"guests\": \"value\",\n\"email\": \"value\"\n}\n\n-------------------------------------\n\n## AFTER JSON (IMPORTANT SYSTEM NOTE)\n\n- Do NOT send any message after JSON\n- The system will handle confirmation and email sending\n\n-------------------------------------\n\n## MENU\n\nStarters:\n- Tandoori Mushroom Tikka ₹320\n- Keema Pav Sliders ₹380\n\nMains:\n- Paneer Lababdar ₹480\n- Dal Makhani ₹420\n\nDrinks:\n- Fresh Lime Soda ₹120\n- Masala Chai ₹80\n\n-------------------------------------\n\n## STYLE\n\n- Friendly\n- Short replies\n- Human-like conversation\n- Professional tone\n\n-------------------------------------\n\n## RULES\n\n- Do NOT ask all questions at once  \n- Guide step-by-step  \n- Understand natural language like:\n  \"book 10 may 7pm 2 people\"  \n- Keep conversation simple  \n- Remember previous answers using memory  \n- Do not ask same question again  \n\n-------------------------------------\n\n## CRITICAL RULES (VERY IMPORTANT)\n\n- NEVER return JSON unless booking is confirmed AND email is collected\n- NEVER mix JSON with normal text\n- NEVER send booking confirmation without full details\n- NEVER assume missing information\n- NEVER continue booking if user changes topic\n\n-------------------------------------\n\n## EXAMPLES\n\nUser: hi  \n→ Hello! How can I help you today?\n\nUser: book table  \n→ Sure! May I know your name?\n\nUser: yes  \n→ Please provide your email for booking confirmation and reminder.\n\nUser: my email is abc@gmail.com  \n→ Return ONLY JSON"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -2256,
+        -784
+      ],
+      "id": "afccb172-3667-4640-8c77-bdea8a5c1c06",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram').item.json.message.chat.id }}",
+        "text": "=Booking Confirmed ✅\n\nBooking ID: {{ $node[\"Edit Fields\"].json[\"booking_id\"] }}\n\nName: {{ $json.Name }}\nDate: {{ $node[\"Edit Fields\"].json[\"date\"] }}\nTime: {{ $node[\"Edit Fields\"].json[\"time\"] }}\nGuests: {{ $node[\"Edit Fields\"].json[\"guests\"] }}\n\nSee you soon at Innova Restaurant 😊",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -944,
+        -1024
+      ],
+      "id": "aab6f21e-5f8d-44df-b75f-6a90f729b779",
+      "name": "Send a text message",
+      "webhookId": "b655d556-baae-4baf-b313-cc6287bc2be2",
+      "credentials": {
+        "telegramApi": {
+          "id": "pZJAhAtAWVq4Fs3V",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.message.chat.id }}",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -2112,
+        -512
+      ],
+      "id": "a7310500-7b92-4a40-bf88-1c2f4fadd1c4",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1fdab633-6fae-44fe-bf4d-6d3ac8518e25",
+              "name": "chat_id",
+              "value": "={{ $('Telegram').item.json.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "14e3fd54-e4a3-47c5-ab79-0a266f728099",
+              "name": "name ",
+              "value": "={{ $json.name || $('Telegram').item.json.message.from.first_name }}",
+              "type": "string"
+            },
+            {
+              "id": "03094e13-eff7-4dbd-b460-5b3bf80389a3",
+              "name": "date",
+              "value": "={{ $json.date }}",
+              "type": "string"
+            },
+            {
+              "id": "bc45e003-8e27-4c64-b57a-3af2f2b5e7ee",
+              "name": "=time",
+              "value": "={{ $json.time }}",
+              "type": "string"
+            },
+            {
+              "id": "adf1b387-c455-40c9-ba23-fee654f91bdd",
+              "name": "guests",
+              "value": "={{ $json.guests }}",
+              "type": "string"
+            },
+            {
+              "id": "f0f55a1f-faaf-4fce-b3a2-21fa5f6be73b",
+              "name": "booking_id",
+              "value": "={{ 'IR-' + Math.floor(100000 + Math.random() * 900000) }}",
+              "type": "string"
+            },
+            {
+              "id": "b2ba70be-1b74-453e-a0e5-ebec4d72a915",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1392,
+        -864
+      ],
+      "id": "4848220a-eb4a-4885-8c78-9faed492c555",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d77c602b-939a-46cb-9ab9-0b380684822c",
+              "leftValue": "={{ $json[\"name\"] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "e293b3ff-05fb-4df5-a068-2e0e5bfe48a6",
+              "leftValue": "={{ $json[\"date\"] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "23bde529-9675-4f97-9d31-633110b43c65",
+              "leftValue": "={{ $json[\"time\"] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "34f5ca0c-05f1-464b-8152-018722672319",
+              "leftValue": "={{ $json[\"guests\"] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1664,
+        -784
+      ],
+      "id": "1db275ba-7bed-41c5-8c4c-f6d01b613a7d",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram').item.json.message.chat.id }}",
+        "text": "={{ $json.output || \"\" }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1488,
+        -544
+      ],
+      "id": "29f6232a-fd60-4e76-8bf7-484ca478ffde",
+      "name": "Send Normal Reply",
+      "webhookId": "78bed779-e6d9-45c6-9422-8adf59e74594",
+      "credentials": {
+        "telegramApi": {
+          "id": "pZJAhAtAWVq4Fs3V",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let output = $json.output;\n\ntry {\n  // Remove ```json and ``` wrappers\n  output = output.replace(/```json/g, '').replace(/```/g, '').trim();\n\n  const parsed = JSON.parse(output);\n\n  return [\n    {\n      json: parsed\n    }\n  ];\n} catch (error) {\n  return [\n    {\n      json: {\n        output: output\n      }\n    }\n  ];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1920,
+        -784
+      ],
+      "id": "8a19daef-287d-46df-96f6-3503b17944e5",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "model": "deepseek/deepseek-chat-v3-0324",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -2320,
+        -544
+      ],
+      "id": "36c883b8-9dec-4373-861a-4a4e4c437f5a",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Jrj6OAsmLkPQ1q4r",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1H5th0FFH1yy1Xjw3bQx_ynYuB5zzf9gMblrwDURmVUk",
+          "mode": "list",
+          "cachedResultName": "innova restro",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1H5th0FFH1yy1Xjw3bQx_ynYuB5zzf9gMblrwDURmVUk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Booking",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1H5th0FFH1yy1Xjw3bQx_ynYuB5zzf9gMblrwDURmVUk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Booking ID": "={{ $json.booking_id }}",
+            "Name": "={{ $json['name '] }}",
+            "Date": "={{ $json.date }}",
+            "Time": "={{ $json.time }}",
+            "Guests": "={{ $json.guests }}",
+            "Chat ID": "={{ $json.chat_id }}",
+            "Status": "confirmed",
+            "Created At": "={{$now}}"
+          },
+          "matchingColumns": [
+            "Booking ID"
+          ],
+          "schema": [
+            {
+              "id": "Booking ID",
+              "displayName": "Booking ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Guests",
+              "displayName": "Guests",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Chat ID",
+              "displayName": "Chat ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Created At",
+              "displayName": "Created At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1184,
+        -864
+      ],
+      "id": "6261ca52-532e-415c-b87c-d0ca893785a0",
+      "name": "sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "szzKaFAIutLxegBZ",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Edit Fields').item.json.email }}",
+        "subject": "innovaburst@gmail.com",
+        "message": "=Hello,  A new table booking has been confirmed.  Booking Details:  Booking ID: {{ $json.booking_id }} Name: {{ $json.name || \"Guest\" }} Date: {{ $json.date }} Time: {{ $json.time }} Guests: {{ $json.guests }}  Status: Confirmed  Regards, Innova Restaurant Bot",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -944,
+        -720
+      ],
+      "id": "316d062f-ceb1-4309-bbf2-1da95a26a6f7",
+      "name": "email",
+      "webhookId": "08ed0196-2c0a-46ee-8cf3-7032fa4b4df6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "EKmedy7tU4Be9S4t",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2480,
+        -784
+      ],
+      "id": "8e9840ab-c11f-4777-87e4-39dd924c7ab1",
+      "name": "Telegram",
+      "webhookId": "641cbef0-0e73-47d1-b090-df8b7fef7cab",
+      "credentials": {
+        "telegramApi": {
+          "id": "pZJAhAtAWVq4Fs3V",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Normal Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "d1af15e2-990c-4d21-a831-171a103b96e4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1cd2ecd1251d012a2b32b86ad1e9d55e24c5573949d7a6b76b5b5af30b38a512"
+  },
+  "id": "mpIpPt7RUGYuT9WU",
+  "tags": []
+}
